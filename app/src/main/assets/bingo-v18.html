@@ -120,10 +120,11 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min
 @keyframes loadFadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
 #s-welcome{justify-content:center;gap:0;padding-top:70px;}
-.logo{font-family:'Bebas Neue',cursive;font-size:clamp(2.6rem,9vh,5rem);letter-spacing:clamp(6px,2vh,12px);
+.logo{font-family:'Bebas Neue',cursive;font-size:clamp(2.8rem,15vw,5.5rem);letter-spacing:clamp(4px,1.8vw,10px);
   background:linear-gradient(135deg,var(--gold),var(--gold2),var(--red));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  line-height:1;margin-bottom:4px;margin-top:clamp(4px,2vh,20px);}
+  line-height:1;margin-bottom:4px;margin-top:clamp(4px,2vh,20px);
+  width:100%;text-align:center;white-space:nowrap;}
 .logo-sub{color:var(--muted);font-size:.85rem;letter-spacing:3px;margin-bottom:6px;}
 .welcome-player{font-size:.9rem;color:var(--gold);margin-bottom:clamp(10px,3vh,34px);font-weight:700;}
 .menu-stack{display:flex;flex-direction:column;gap:12px;width:100%;max-width:310px;margin-bottom:14px;}
@@ -526,6 +527,8 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min
       <span class="mc-icon">🌐🏆</span>
       <span class="mc-text"><b data-i18n="netTournamentTitle">بطولة شبكية</b></span>
     </button>
+  </div>
+  <div class="menu-stack" style="max-width:340px;">
     <button class="menu-card card-levels" id="btn-levels-mode" onclick="openLevels()">
       <span class="mc-icon">🎯</span>
       <span class="mc-text"><b id="mc-levels-title" data-i18n="levelsShort">المستويات</b></span>
@@ -1821,6 +1824,8 @@ function getBackTarget(){
       if(netArrangeContext==='guest-rematch'||netArrangeContext==='host-rematch')return 's-win';
       if(netArrangeContext==='guest'||netArrangeContext==='guest-inroom')return 's-join';
       if(arrangingForAIRematch)return 's-win';
+      if(currentLevel)return 's-levels';
+      if(dailyMode)return 's-welcome';
       return 's-setup';
     case 's-host': case 's-join':
       return netTournamentActive?'s-net-tournament-size':(cameFromNetTournamentSize?'s-net-tournament-choice':'s-connect');
