@@ -1,6 +1,9 @@
 name: Build Kotlin APK
 on: workflow_dispatch
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,3 +20,16 @@ jobs:
         with:
           name: bingo-kotlin-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Rename APK for the public download link
+        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/bingo.apk
+      # Publishes (or overwrites) a release tagged "latest" every time this runs, so the
+      # download link below NEVER changes — safe to post once on Facebook/Instagram and
+      # just re-run this workflow whenever a new build should replace it.
+      - name: Publish direct-download APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "BINGO — أحدث نسخة"
+          body: "تحميل مباشر لآخر نسخة من تطبيق BINGO (ملف APK فقط، بدون ضغط)."
+          files: app/build/outputs/apk/debug/bingo.apk
+          make_latest: true
