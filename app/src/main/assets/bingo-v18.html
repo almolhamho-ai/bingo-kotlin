@@ -2175,6 +2175,27 @@ function humanScratch(num){
 // the live game screen. Text-only overlay (no ball/circle graphic).
 const PRAISE_WORDS=['INCREDIBLE','AMAZING','FANTASTIC','AWESOME','BRILLIANT','SPECTACULAR','UNSTOPPABLE','MAGNIFICENT'];
 const PRAISE_COLORS=['#ff6b35','#ff2d78','#7c3aed','#0ea5e9','#16a34a','#f59e0b'];
+// WebView loads its voice list asynchronously — the first speak() right after page load
+// can silently fail with no English voice ready yet, so we prime it once up front and
+// keep listening for the list to actually arrive.
+let praiseVoices=[];
+if('speechSynthesis' in window){
+  const loadPraiseVoices=()=>{praiseVoices=speechSynthesis.getVoices();};
+  loadPraiseVoices();
+  speechSynthesis.onvoiceschanged=loadPraiseVoices;
+}
+function speakPraiseWord(word){
+  if(!(settings.sfxVol>0))return; // muted/zero SFX volume — the spoken word is part of the sound effects, so it goes silent with them too
+  try{
+    if(!('speechSynthesis' in window))return;
+    speechSynthesis.cancel(); // don't queue/overlap if two lines complete back-to-back
+    const u=new SpeechSynthesisUtterance(word);
+    u.lang='en-US';u.rate=0.95;u.pitch=1.05;u.volume=Math.min(1,settings.sfxVol);
+    const enVoice=praiseVoices.find(v=>v.lang&&v.lang.toLowerCase().startsWith('en'));
+    if(enVoice)u.voice=enVoice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
 function showPraiseWord(){
   const gameScreen=document.getElementById('s-game');
   if(!gameScreen||!gameScreen.classList.contains('active'))return;
@@ -2187,14 +2208,8 @@ function showPraiseWord(){
   void el.offsetWidth; // restart the animation even if two lines complete back-to-back
   el.classList.add('show');
   setTimeout(()=>{el.classList.remove('show');},1300);
-  try{
-    if('speechSynthesis' in window){
-      speechSynthesis.cancel(); // don't queue/overlap if triggered again quickly
-      const u=new SpeechSynthesisUtterance(word);
-      u.lang='en-US';u.rate=0.95;u.pitch=1.05;
-      speechSynthesis.speak(u);
-    }
-  }catch(e){}
+  playSound('praise');
+  speakPraiseWord(word);
 }
 function doScratch(pidx,num){
   if(gameOver)return;
@@ -3668,6 +3683,10 @@ function playSound(type){
       tone(880,'sine',0,0.05,0.1);
     } else if(type==='achieve'){
       [660,880,1108].forEach((f,i)=>tone(f,'sine',i*0.09,0.22,0.24));
+    } else if(type==='praise'){
+      // bright ascending sparkle chime that accompanies the spoken hype-word popup
+      [784,988,1245,1568].forEach((f,i)=>tone(f,'triangle',i*0.045,0.16,0.22));
+      tone(2093,'sine',0.2,0.35,0.18);
     }
   }catch(e){}
 }
