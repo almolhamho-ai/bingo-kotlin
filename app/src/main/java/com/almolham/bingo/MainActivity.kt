@@ -2,6 +2,7 @@ package com.almolham.bingo
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Base64
 import android.view.KeyEvent
 import android.webkit.JavascriptInterface
@@ -15,10 +16,16 @@ import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.Collections
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+
+    // محرك نطق أندرويد الأصلي — أوثق بكتير من speechSynthesis الخاص بالـWebView،
+    // يلي دعمه غير مضمون على أجهزة/إصدارات أندرويد كتيرة.
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
 
     private class ClientConn(val id: Int, val socket: Socket, val writer: PrintWriter)
 
@@ -148,6 +155,22 @@ class MainActivity : AppCompatActivity() {
         fun exitApp() {
             runOnUiThread { finish() }
         }
+
+        // نطق كلمة إنجليزية بصوت أندرويد الأصلي (بدل speechSynthesis غير المضمونة بالـWebView).
+        // ما بيعمل شي إذا محرك النطق مش جاهز أو مش موجود على الجهاز — صامت بدل ما يعطّل اللعبة.
+        @JavascriptInterface
+        fun speakText(text: String) {
+            val engine = tts ?: return
+            if (!ttsReady) return
+            runOnUiThread {
+                engine.stop()
+                val params = Bundle()
+                engine.speak(text, TextToSpeech.QUEUE_FLUSH, params, "bingoPraise")
+            }
+        }
+
+        @JavascriptInterface
+        fun hasNativeTts(): Boolean = ttsReady
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -175,6 +198,16 @@ class MainActivity : AppCompatActivity() {
         }
         webView.addJavascriptInterface(AndroidBridge(), "AndroidBridge")
 
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = tts?.setLanguage(Locale.US)
+                ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
+                        result != TextToSpeech.LANG_NOT_SUPPORTED
+                tts?.setSpeechRate(0.95f)
+                tts?.setPitch(1.05f)
+            }
+        }
+
         webView.loadUrl("file:///android_asset/bingo-v18.html")
     }
 
@@ -189,6 +222,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        tts?.stop()
+        tts?.shutdown()
         webView.destroy()
         super.onDestroy()
     }
